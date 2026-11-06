@@ -4,214 +4,388 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>TurtleShell</title>
+  <meta name="description" content="자세가 무너지면 보던 탭이 흐려지는 크롬 확장 프로그램. 웹캠으로 거북목 자세를 감지해요.">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
   <style>
+    @font-face { font-family: "GmarketSans"; font-weight: 700; font-display: swap; src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2001@1.1/GmarketSansBold.woff") format("woff"); }
+    @font-face { font-family: "GmarketSans"; font-weight: 500; font-display: swap; src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2001@1.1/GmarketSansMedium.woff") format("woff"); }
+
     :root {
-      --bg-color: #f5f5f7;
-      --card-bg: #ffffff;
-      --text-main: #1d1d1f;
-      --text-sub: #86868b;
-      --accent: #0071e3;
-      --accent-hover: #0077ed;
+      --forest: #163A2C;
+      --forest-deep: #0F2B20;
+      --shell: #2E6A4E;
+      --leaf: #9CC98A;
+      --amber: #F5B83D;
+      --amber-deep: #B97E0C;
+      --paper: #F4F6F1;
+      --line: #D8DED4;
+      --ink: #17221D;
+      --ink-soft: #56635D;
+      --display: "GmarketSans", "Pretendard Variable", sans-serif;
+      --body: "Pretendard Variable", Pretendard, -apple-system, "Segoe UI", sans-serif;
     }
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { -webkit-user-select: none; user-select: none; -webkit-user-drag: none; }
+    img { -webkit-user-drag: none; }
+    body { background: var(--paper); color: var(--ink); font-family: var(--body); font-size: 17px; line-height: 1.75; word-break: keep-all; -webkit-font-smoothing: antialiased; }
+    img { display: block; max-width: 100%; }
+    a { color: inherit; }
+    :focus-visible { outline: 3px solid var(--amber); outline-offset: 3px; }
+    .wrap { width: min(1160px, 100% - 40px); margin-inline: auto; }
+
+    h1, h2, .display { font-family: var(--display); font-weight: 700; letter-spacing: -0.02em; }
+
+    .btn {
+      display: inline-flex; align-items: center; gap: 10px;
+      background: var(--amber); color: var(--forest-deep);
+      font: 700 17px/1 var(--body);
+      padding: 18px 26px; border-radius: 8px; text-decoration: none;
+      box-shadow: 0 3px 0 var(--amber-deep);
+      transition: transform .12s, box-shadow .12s;
+    }
+    .btn:hover { transform: translateY(-1px); box-shadow: 0 4px 0 var(--amber-deep); }
+    .btn:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--amber-deep); }
+    .btn svg { width: 19px; height: 19px; }
+
+    /* ---------------- hero ---------------- */
+    .hero { background: var(--forest); color: #fff; }
+    .top { display: flex; justify-content: space-between; align-items: center; padding: 26px 0; }
+    .brand { display: flex; align-items: center; gap: 10px; font: 700 21px/1 var(--display); text-decoration: none; }
+    .brand svg { width: 34px; height: 34px; }
+    .top nav { display: flex; gap: 28px; font-size: 15px; }
+    .top nav a { color: rgba(255,255,255,.72); text-decoration: none; }
+    .top nav a:hover { color: #fff; text-decoration: underline; text-underline-offset: 4px; }
+
+    .hero-grid { display: grid; grid-template-columns: 5fr 7fr; gap: 56px; align-items: end; padding: 56px 0 0; }
+    .hero-copy { padding-bottom: 120px; }
+    h1 { font-size: clamp(38px, 4.8vw, 64px); line-height: 1.22; }
+    h1 span { display: inline-block; white-space: nowrap; }
+    .lede { margin-top: 26px; max-width: 25em; color: rgba(255,255,255,.75); }
+    .cta { margin-top: 38px; }
+    .cta small { display: block; margin-top: 14px; font-size: 14px; color: rgba(255,255,255,.55); line-height: 1.6; }
+
+    /* the browser sits on the bottom edge of the hero, like a laptop screen */
+    .stage { position: relative; }
+    .window { position: relative; border-radius: 10px 10px 0 0; overflow: hidden; background: #DEE1E6; box-shadow: 0 -20px 60px -20px rgba(0,0,0,.45); }
+    .tabs { display: flex; align-items: flex-end; gap: 6px; padding: 8px 10px 0; height: 40px; }
+    .tab { background: #fff; border-radius: 8px 8px 0 0; padding: 7px 14px; font-size: 12px; color: #3C4043; display: flex; align-items: center; gap: 8px; min-width: 190px; }
+    .tab::before { content: ""; width: 14px; height: 14px; border-radius: 50%; background: #24292F; }
+    .omnibox { background: #fff; padding: 6px 10px 8px; }
+    .omnibox span { display: block; background: #F1F3F4; border-radius: 16px; padding: 4px 14px; font-size: 12.5px; color: #5F6368; }
+    .viewport { position: relative; aspect-ratio: 2 / 1; overflow: hidden; background: #fff; }
+    .viewport img { width: 100%; height: 100%; object-fit: cover; object-position: top left; }
+    /* same layers as the extension: tinted blur layer + glass message (public/content.js) */
+    .dim { position: absolute; inset: 0; pointer-events: none; }
+    .msg {
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      padding: 18px 36px; border-radius: 22px; white-space: nowrap;
+      background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.25);
+      -webkit-backdrop-filter: blur(25px) saturate(180%); backdrop-filter: blur(25px) saturate(180%);
+      box-shadow: 0 15px 35px rgba(0,0,0,.2), inset 0 1px 0 rgba(255,255,255,.4);
+      color: #fff; font: 700 clamp(20px, 2.4vw, 32px)/1.2 var(--body); text-shadow: 0 2px 8px rgba(0,0,0,.2);
+      opacity: 0; transition: opacity .3s;
+    }
+    .stage.bad .msg { opacity: 1; }
+
+    /* three generated poses, cross-faded by the slider */
+    .person { position: absolute; left: -110px; bottom: 0; width: 360px; aspect-ratio: 777 / 756; z-index: 2; filter: drop-shadow(0 18px 18px rgba(0,0,0,.28)); }
+    .person img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; opacity: 0; transition: opacity .15s; }
+
+    .control { display: flex; align-items: center; gap: 16px; margin: 0 0 22px 160px; font-size: 15px; }
+    .control label { font-weight: 600; white-space: nowrap; }
+    .control output { min-width: 4.5em; font-weight: 700; color: var(--leaf); }
+    .stage.bad .control output { color: var(--amber); }
+    input[type=range] { -webkit-appearance: none; appearance: none; flex: 1; height: 6px; border-radius: 6px; cursor: pointer; background: linear-gradient(90deg, var(--amber) 0 var(--fill, 0%), rgba(255,255,255,.2) var(--fill, 0%)); }
+    input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: #fff; border: 4px solid var(--amber); }
+    input[type=range]::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: #fff; border: 4px solid var(--amber); }
+
+    /* ---------------- day timeline ---------------- */
+    .day { padding: 128px 0 104px; }
+    .day .wrap, .faq .wrap, .install .wrap { display: grid; grid-template-columns: 4fr 7fr; gap: 72px; align-items: start; }
+    .side { position: sticky; top: 40px; }
+    .side h2 { font-size: clamp(28px, 3vw, 40px); line-height: 1.3; }
+    .side p { margin-top: 12px; font-size: 15px; color: var(--ink-soft); }
+    .log { list-style: none; }
+    .log li { display: grid; grid-template-columns: 74px 1fr; gap: 0 22px; }
+    .log time { font: 700 19px/1.5 var(--display); color: var(--shell); font-variant-numeric: tabular-nums; }
+    .log li > div { border-left: 2px solid var(--line); padding: 0 0 44px 26px; position: relative; }
+    .log li > div::before { content: ""; position: absolute; left: -7px; top: 8px; width: 12px; height: 12px; border-radius: 50%; background: var(--paper); border: 2px solid var(--shell); }
+    .log li:last-child > div { padding-bottom: 0; }
+    .log h3 { font-size: 19px; font-weight: 700; line-height: 1.5; }
+    .log p { margin-top: 6px; color: var(--ink-soft); font-size: 16px; max-width: 32em; }
+    .log figure { margin-top: 18px; }
+    .blurred { position: relative; width: min(460px, 100%); aspect-ratio: 2 / 1; overflow: hidden; border-radius: 6px; border: 1px solid var(--line); }
+    .blurred img { width: 100%; height: 100%; object-fit: cover; filter: blur(6px) brightness(.72); transform: scale(1.04); }
+    .blurred .msg { opacity: 1; font-size: 18px; padding: 10px 22px; border-radius: 14px; }
+    .tilt { perspective: 700px; width: min(420px, 100%); }
+    .tilt img { width: 100%; aspect-ratio: 2 / 1; object-fit: cover; border-radius: 6px; border: 1px solid var(--line); transform: rotateX(16deg) scale(.95); transform-origin: 50% 100%; }
+
+    /* ---------------- faq ---------------- */
+    .faq { padding: 104px 0; border-top: 1px solid var(--line); }
+    .qa { display: grid; grid-template-columns: 1fr 1fr; gap: 36px 48px; }
+    .qa h3 { font-size: 17px; font-weight: 700; }
+    .qa p { margin-top: 6px; font-size: 15.5px; color: var(--ink-soft); }
+
+    /* ---------------- install ---------------- */
+    .install { background: #fff; border-top: 1px solid var(--line); padding: 96px 0 104px; }
+    .steps { list-style: none; counter-reset: s; }
+    .steps li { counter-increment: s; display: grid; grid-template-columns: 48px 1fr; padding: 22px 0; border-top: 1px solid var(--line); }
+    .steps li:last-child { border-bottom: 1px solid var(--line); }
+    .steps li::before { content: counter(s); font: 700 24px/1.3 var(--display); color: var(--shell); }
+    .steps h3 { font-size: 17px; font-weight: 700; line-height: 1.5; }
+    .steps p { margin-top: 4px; font-size: 15.5px; color: var(--ink-soft); }
+    .side .btn { margin-top: 26px; }
+    .copy { display: inline-flex; align-items: center; gap: 12px; margin-top: 12px; padding: 9px 12px; border: 1px solid var(--line); border-radius: 6px; background: var(--paper); cursor: pointer; font: 500 14px/1 Consolas, ui-monospace, monospace; color: var(--ink); }
+    .copy small { font: 600 13px/1 var(--body); color: var(--shell); }
+    .copy:hover { border-color: var(--ink-soft); }
+    footer a { color: rgba(255,255,255,.8); }
+
+    footer { background: var(--forest-deep); color: rgba(255,255,255,.55); font-size: 14px; padding: 26px 0; }
+    footer .wrap { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+
+    /* scroll reveal: blurry and faint while entering, sharp once in view (same idea as the product).
+       Pure CSS scroll-driven animation; browsers without support just show everything. */
+    @supports (animation-timeline: view()) {
+      @media (prefers-reduced-motion: no-preference) {
+        .side, .log li, .qa > div, .steps li {
+          animation: sharpen linear both;
+          animation-timeline: view();
+          animation-range: entry 0% entry 90%;
+        }
+      }
+    }
+    @keyframes sharpen {
+      from { opacity: .15; filter: blur(6px); transform: translateY(24px); }
+      to { opacity: 1; filter: none; transform: none; }
     }
 
-    body {
-      background-color: var(--bg-color);
-      color: var(--text-main);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      padding: 20px;
+    @media (max-width: 1000px) {
+      .hero-grid { grid-template-columns: 1fr; gap: 40px; }
+      .hero-copy { padding-bottom: 0; }
+      .person { left: -10px; width: 330px; }
+      .day .wrap, .faq .wrap, .install .wrap { grid-template-columns: 1fr; gap: 40px; }
+      .side { position: static; }
+      .qa { grid-template-columns: 1fr; }
     }
-
-    .container {
-      max-width: 680px;
-      width: 100%;
-      background: var(--card-bg);
-      border-radius: 24px;
-      padding: 48px 40px;
-      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.04);
+    @media (max-width: 600px) {
+      .top nav { display: none; }
+      .person { width: 220px; left: -6px; }
+      .control { margin-left: 0; flex-wrap: wrap; }
+      .control input { order: 3; flex-basis: 100%; }
+      .btn { width: 100%; justify-content: center; }
+      .day { padding-top: 88px; }
+      .log li { grid-template-columns: 1fr; }
+      .log time { margin-bottom: 6px; }
     }
-
-    .header {
-      text-align: center;
-      margin-bottom: 36px;
-    }
-
-    .badge {
-      display: inline-block;
-      padding: 6px 14px;
-      background: rgba(0, 113, 227, 0.1);
-      color: var(--accent);
-      border-radius: 20px;
-      font-size: 13px;
-      font-weight: 600;
-      margin-bottom: 12px;
-    }
-
-    h1 {
-      font-size: 32px;
-      font-weight: 700;
-      letter-spacing: -0.5px;
-      margin-bottom: 8px;
-    }
-
-    p.subtitle {
-      color: var(--text-sub);
-      font-size: 16px;
-      line-height: 1.5;
-    }
-
-    .download-box {
-      text-align: center;
-      margin: 32px 0 40px;
-    }
-
-    .download-btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      background-color: var(--accent);
-      color: #fff;
-      font-size: 17px;
-      font-weight: 600;
-      padding: 16px 36px;
-      border-radius: 980px;
-      text-decoration: none;
-      transition: all 0.2s ease;
-      box-shadow: 0 4px 12px rgba(0, 113, 227, 0.25);
-    }
-
-    .download-btn:hover {
-      background-color: var(--accent-hover);
-      transform: translateY(-2px);
-    }
-
-    .notice {
-      margin-top: 10px;
-      font-size: 13px;
-      color: var(--text-sub);
-    }
-
-    .guide-section {
-      border-top: 1px solid #e5e5e5;
-      padding-top: 32px;
-    }
-
-    .guide-title {
-      font-size: 20px;
-      font-weight: 700;
-      margin-bottom: 20px;
-    }
-
-    .steps {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-
-    .step-item {
-      display: flex;
-      align-items: flex-start;
-      gap: 16px;
-      background: #fbfbfd;
-      padding: 16px;
-      border-radius: 12px;
-      border: 1px solid #f0f0f2;
-    }
-
-    .step-number {
-      background: var(--accent);
-      color: #fff;
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 700;
-      font-size: 14px;
-      flex-shrink: 0;
-    }
-
-    .step-content {
-      font-size: 15px;
-      line-height: 1.5;
-    }
-
-    .step-content code {
-      background: #e8e8ed;
-      padding: 2px 6px;
-      border-radius: 4px;
-      font-family: monospace;
-      font-size: 13px;
-      color: #d63384;
-    }
-
-    .footer {
-      text-align: center;
-      margin-top: 32px;
-      font-size: 12px;
-      color: var(--text-sub);
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      .msg, .btn { transition: none; }
     }
   </style>
 </head>
 <body>
 
-  <div class="container">
-    <header class="header">
-      <span class="badge">개발자 베타 배포</span>
-      <h1>TurtleShell</h1>
-      <p class="subtitle">실시간 자세 모니터링 및 일어서기 타이머</p>
+  <div class="hero">
+    <header class="wrap top">
+      <a class="brand" href="#">
+        <svg viewBox="0 0 40 40" aria-hidden="true">
+          <path d="M5 27c0-9 6-15 14-15s14 6 14 15z" fill="#5FA27C"/>
+          <path d="M19 12v15M11 16l3 11M27 16l-3 11M6 22h26" stroke="#163A2C" stroke-width="1.6"/>
+          <circle cx="33" cy="20" r="5" fill="#9CC98A"/><circle cx="34.5" cy="19" r="1.2" fill="#163A2C"/>
+        </svg>
+        TurtleShell
+      </a>
+      <nav aria-label="페이지 안내">
+        <a href="#day">쓰는 모습</a>
+        <a href="#faq">자주 묻는 것</a>
+        <a href="#install">설치</a>
+        <a href="https://github.com/juuunhochoi/turtleshell-edit">GitHub</a>
+      </nav>
     </header>
 
-    <div class="download-box">
-      <!-- 💡 여기에 실제 업로드한 파일 이름/경로 지정 (예: dist.zip) -->
-      <a href="dist.zip" class="download-btn" download>
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="join">
-          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-          <polyline points="7 10 12 15 17 10"></polyline>
-          <line x1="12" y1="15" x2="12" y2="3"></line>
-        </svg>
-        TurtleShell (.zip) 다운로드
-      </a>
-      <p class="notice">※ 크롬 웹스토어 심사 중으로 수동 설치 파일이 제공됩니다.</p>
-    </div>
+    <section class="wrap hero-grid">
+      <div class="hero-copy">
+        <h1><span>자세가 무너지면</span> <span>화면이 흐려져요.</span></h1>
+        <p class="lede">크롬 확장 프로그램이에요. 웹캠으로 귀와 어깨 위치를 보다가 고개가 앞으로 나오면 보던 탭을 흐리게 해요. 바로 앉으면 다시 선명해지고요.</p>
+        <div class="cta">
+          <a href="#install" class="btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M4 20h16"/></svg>
+            다운로드하기
+          </a>
+          <small>zip 파일 15MB. 아직 크롬 웹스토어 심사 중이라 압축을 풀어서 설치해야 해요.</small>
+        </div>
+      </div>
 
-    <section class="guide-section">
-      <h2 class="guide-title">설치 가이드</h2>
-      <div class="steps">
-        <div class="step-item">
-          <div class="step-number">1</div>
-          <div class="step-content">
-            상단 버튼을 눌러 <strong>dist.zip</strong> 파일을 다운로드한 후 압축을 풉니다.
+      <div class="stage" id="stage">
+        <div class="control">
+          <label for="lean">자세를 무너뜨려 보세요</label>
+          <input type="range" id="lean" min="0" max="100" value="0">
+          <output id="state" for="lean">바른 자세</output>
+        </div>
+        <div class="window" aria-hidden="true">
+          <div class="tabs"><div class="tab">담요 밖으로 절대 안 나오는 중 - 숏피드</div></div>
+          <div class="omnibox"><span>shortfeed.example/shorts/bori</span></div>
+          <div class="viewport">
+            <img src="assets/feed.webp" alt="" width="1600" height="800">
+            <div class="dim" id="dim"></div>
+            <div class="msg">허리를 펴세요</div>
           </div>
         </div>
-        <div class="step-item">
-          <div class="step-number">2</div>
-          <div class="step-content">
-            Chrome 주소창에 <code>chrome://extensions</code> 를 입력하여 이동한 뒤, 우측 상단의 <strong>개발자 모드</strong> 스위치를 켭니다.
-          </div>
+        <div class="person" aria-hidden="true">
+          <img src="assets/pose-1.webp" alt="" width="777" height="756">
+          <img src="assets/pose-2.webp" alt="" width="777" height="756">
+          <img src="assets/pose-3.webp" alt="" width="777" height="756">
         </div>
-        <div class="step-item">
-          <div class="step-number">3</div>
-          <div class="step-content">
-            좌측 상단의 <strong>'압축 해제된 확장 프로그램을 로드'</strong> 버튼을 누르고, 압축을 푼 <strong>dist 폴더</strong>를 선택하면 즉시 설치됩니다!
-          </div>
+      </div>
+    </section>
+  </div>
+
+  <main>
+    <section class="day" id="day">
+      <div class="wrap">
+        <div class="side">
+          <h2>실제로는 이렇게 동작해요</h2>
+          <p>시간은 예시예요. 타이머는 기본값인 앉기 50분, 휴식 10분으로 잡았어요.</p>
+        </div>
+        <ol class="log">
+          <li><time>14:00</time><div>
+            <h3>사이드패널을 열고 기준 자세를 저장해요</h3>
+            <p>툴바에서 TurtleShell 아이콘을 눌러 감지를 시작하세요. 카메라를 허용하고 편하게 바로 앉은 다음 가운데 버튼을 누르면 지금 자세가 기준으로 저장돼요.</p>
+          </div></li>
+          <li><time>14:35</time><div>
+            <h3>영상을 보다가 고개가 앞으로 나와요</h3>
+            <p>귀가 기준보다 앞으로 나간 만큼 보던 탭이 어두워지고 흐려져요. 최대 6px까지 흐려지는데, 그쯤 되면 가운데에 ‘허리를 펴세요’가 떠요.</p>
+            <figure class="blurred" aria-hidden="true"><img src="assets/feed.webp" alt="" loading="lazy"><div class="msg">허리를 펴세요</div></figure>
+          </div></li>
+          <li><time>14:36</time><div>
+            <h3>다시 바로 앉아요</h3>
+            <p>흐림이 바로 풀려요. 따로 누를 건 없어요.</p>
+          </div></li>
+          <li><time>14:50</time><div>
+            <h3>앉은 지 50분이 지났어요</h3>
+            <p>쉬는 시간 10분 동안 화면이 뒤로 살짝 눕혀져 있어요. 기울기는 사이드패널에서 바꿀 수 있어요.</p>
+            <figure class="tilt" aria-hidden="true"><img src="assets/feed.webp" alt="" loading="lazy"></figure>
+          </div></li>
+          <li><time>15:00</time><div>
+            <h3>다시 앉는 시간이에요</h3>
+            <p>화면이 원래대로 돌아오고 50분 타이머가 다시 돌아가요.</p>
+          </div></li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="faq" id="faq">
+      <div class="wrap">
+        <div class="side"><h2>이럴 땐 어떻게 돼요?</h2></div>
+        <div class="qa">
+          <div><h3>고개를 옆으로 돌리면요?</h3><p>측정을 잠깐 멈춰요. 고개를 옆으로 기울이거나 몸을 돌렸을 때도 마찬가지고, 0.4초 넘게 그 상태면 흐림도 풀어요.</p></div>
+          <div><h3>자리를 비우면요?</h3><p>얼굴과 어깨가 하나도 안 보이면 바로 원래 화면으로 돌아가요.</p></div>
+          <div><h3>화상 회의 중에는요?</h3><p>Meet, Zoom, Teams 같은 회의 사이트에서는 감지를 멈춰요. 이 동작은 사이드패널에서 끌 수 있어요.</p></div>
+          <div><h3>지금 당장 화면을 봐야 하면요?</h3><p>흐려진 화면 오른쪽 위의 ×를 누르면 감지가 꺼져요.</p></div>
+          <div><h3>카메라 영상은 어디로 가요?</h3><p>아무 데도 안 가요. 분석은 브라우저 안에서 끝나고 영상은 저장하지 않아요. 사이드패널에 내 얼굴이 보이는 것도 싫으면 프라이버시 모드를 켜세요. 영상 대신 실루엣만 보여요.</p></div>
         </div>
       </div>
     </section>
 
+    <section class="install" id="install">
+      <div class="wrap">
+        <div class="side">
+          <h2>설치</h2>
+          <p>크롬 웹스토어 심사가 끝날 때까지는 압축 파일로 설치해요.</p>
+          <a href="dist.zip" class="btn" download>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M4 20h16"/></svg>
+            dist.zip 다운로드
+          </a>
+        </div>
+        <ol class="steps">
+          <li><div>
+            <h3>압축을 풀어요</h3>
+            <p>다운로드한 dist.zip을 풀면 <b>dist</b> 폴더가 생겨요.</p>
+          </div></li>
+          <li><div>
+            <h3>개발자 모드를 켜요</h3>
+            <p>주소창에 아래 주소를 붙여 넣고 오른쪽 위 개발자 모드 스위치를 켜세요.</p>
+            <button class="copy" type="button" data-copy="chrome://extensions">chrome://extensions <small>복사</small></button>
+          </div></li>
+          <li><div>
+            <h3>dist 폴더를 불러와요</h3>
+            <p>‘압축해제된 확장 프로그램을 로드합니다’를 누르고 <b>dist</b> 폴더를 고르세요.</p>
+          </div></li>
+          <li><div>
+            <h3>14:00으로 돌아가요</h3>
+            <p>툴바의 TurtleShell 아이콘을 누르고 카메라를 허용한 뒤 기준 자세를 저장하면 돼요.</p>
+          </div></li>
+        </ol>
+      </div>
+    </section>
+  </main>
 
-  </div>
+  <footer>
+    <div class="wrap">
+      <span>TurtleShell 개발자 베타. 버그나 의견은 <a href="https://github.com/juuunhochoi/turtleshell-edit/issues">GitHub 이슈</a>로 알려 주세요.</span>
+      <a href="https://github.com/juuunhochoi/turtleshell-edit">소스 코드</a>
+    </div>
+  </footer>
 
+  <script>
+    const $ = id => document.getElementById(id);
+    const stage = $("stage"), lean = $("lean"), state = $("state"), dim = $("dim");
+    const poses = document.querySelectorAll(".person img");
+
+    function render(value) {
+      const t = value / 100;
+      // same thresholds as the status label: good / a little / turtle neck
+      const pose = t < 0.2 ? 0 : t < 0.6 ? 1 : 2;
+      poses.forEach((img, i) => { img.style.opacity = i === pose ? 1 : 0; });
+      // mirrors public/overlay.js: black at score * 0.3 alpha, blur up to 6px
+      const p = Math.max(0, (t - 0.2) / 0.8), s = p * p * (3 - 2 * p);
+      dim.style.background = `rgba(0,0,0,${(s * 0.3).toFixed(3)})`;
+      dim.style.backdropFilter = dim.style.webkitBackdropFilter = s ? `blur(${(s * 6).toFixed(2)}px)` : "none";
+      const bad = t >= 0.6;
+      stage.classList.toggle("bad", bad);
+      state.textContent = t < 0.2 ? "바른 자세" : bad ? "거북목" : "조금 나옴";
+      lean.style.setProperty("--fill", `${value}%`);
+    }
+    render(0);
+
+    // Autoplay loop: sit straight, lean out, hold, sit back, repeat (6s cycle).
+    // Dragging the slider pauses it; after 4s idle it eases from where the user left it back into the loop.
+    // Skipped entirely for reduced motion.
+    const ease = x => x * x * (3 - 2 * x);
+    const cycle = s => {
+      s %= 6;
+      return s < 1 ? 0 : s < 2.5 ? ease((s - 1) / 1.5) * 90 : s < 3.9 ? 90 : s < 5.2 ? (1 - ease((s - 3.9) / 1.3)) * 90 : 0;
+    };
+    let start = performance.now(), from = 0, paused = false, idleTimer = 0;
+    function tick(now) {
+      if (!paused) {
+        const s = (now - start) / 1000;
+        const v = from + (cycle(s) - from) * ease(Math.min(s, 1)); // first second blends in from `from`
+        lean.value = Math.round(v); render(v);
+      }
+      requestAnimationFrame(tick);
+    }
+    const autoplay = !matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (autoplay) requestAnimationFrame(tick);
+
+    lean.addEventListener("input", () => {
+      render(+lean.value);
+      if (!autoplay) return;
+      paused = true;
+      clearTimeout(idleTimer);
+      idleTimer = setTimeout(() => { from = +lean.value; start = performance.now(); paused = false; }, 4000);
+    });
+
+    document.querySelectorAll("[data-copy]").forEach(button => {
+      button.addEventListener("click", async () => {
+        const label = button.querySelector("small");
+        try { await navigator.clipboard.writeText(button.dataset.copy); label.textContent = "복사됨"; }
+        catch { label.textContent = "직접 입력해 주세요"; }
+        setTimeout(() => { label.textContent = "복사"; }, 1600);
+      });
+    });
+  </script>
 </body>
 </html>
